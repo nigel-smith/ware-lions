@@ -1,0 +1,28 @@
+<!-- admin.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script type="module" src="admin.js" defer></script>
+</head>
+<body>
+  <h1>Admin Panel</h1>
+
+  <h2>Manage Players</h2>
+  <input type="text" id="new-player" placeholder="Player name" />
+  <button id="add-player">Add Player</button>
+  <ul id="player-list"></ul>
+
+  <h2>Match Info</h2>
+  <input type="text" id="opponent-name" placeholder="Opposition Team Name" />
+  <input type="text" id="opponent-location" placeholder="Location" />
+  <button id="save-match-info">Save Info</button>
+
+  <h2>Official Man of the Match</h2>
+  <select id="official-motm"></select>
+  <button id="set-motm">Set Official</button>
+</body>
+</html>
