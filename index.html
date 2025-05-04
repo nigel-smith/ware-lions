@@ -6,13 +6,15 @@
     <title>Youth Football Voting App</title>
     <style>
         :root {
-            --primary: #1e3a8a;
-            --secondary: #0ea5e9;
+            --primary: #222222;
+            --secondary: #555555;
             --accent: #f59e0b;
             --light: #f3f4f6;
             --dark: #1f2937;
             --danger: #ef4444;
             --success: #10b981;
+            --team-primary: #000000;
+            --team-secondary: #ffffff;
         }
         
         body {
@@ -30,11 +32,37 @@
         }
         
         header {
-            background-color: var(--primary);
-            color: white;
+            background: repeating-linear-gradient(
+                90deg,
+                var(--team-primary),
+                var(--team-primary) 20px,
+                var(--team-secondary) 20px,
+                var(--team-secondary) 40px
+            );
+            color: #000;
             padding: 1rem;
             text-align: center;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        header h1, header p {
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+            position: relative;
+            z-index: 2;
+        }
+        
+        header::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.3);
+            z-index: 1;
         }
         
         nav {
@@ -62,6 +90,14 @@
         .nav-button.active {
             background-color: var(--secondary);
         }
+
+        .admin-only {
+            display: none;
+        }
+        
+        body.is-admin .admin-only {
+            display: block;
+        }
         
         .page {
             display: none;
@@ -80,9 +116,35 @@
             text-align: center;
             margin: 1rem 0;
             padding: 1rem;
-            background-color: var(--primary);
+            background: repeating-linear-gradient(
+                45deg,
+                var(--team-primary),
+                var(--team-primary) 10px,
+                var(--team-secondary) 10px,
+                var(--team-secondary) 20px
+            );
             color: white;
             border-radius: 8px;
+            position: relative;
+        }
+        
+        .timer-container::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            border-radius: 8px;
+            z-index: 1;
+        }
+        
+        .timer-container h3,
+        .timer-display,
+        .timer-controls {
+            position: relative;
+            z-index: 2;
         }
         
         .timer-display {
@@ -113,7 +175,7 @@
         }
         
         .btn-primary:hover {
-            background-color: #0284c7;
+            background-color: #444444;
         }
         
         .btn-secondary {
@@ -315,6 +377,63 @@
         .toast.show {
             opacity: 1;
         }
+        
+        .login-section {
+            margin: 2rem auto;
+            max-width: 400px;
+            padding: 1.5rem;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .role-status {
+            padding: 0.5rem;
+            text-align: center;
+            background-color: var(--light);
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            font-weight: bold;
+        }
+        
+        .role-status.admin {
+            background-color: var(--success);
+            color: white;
+        }
+        
+        .disabled-player {
+            opacity: 0.5;
+        }
+        
+        .disabled-player .vote-btn {
+            pointer-events: none;
+            opacity: 0.7;
+        }
+        
+        .voting-status {
+            margin: 1rem 0;
+            padding: 0.75rem;
+            border-radius: 4px;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        .voting-status.open {
+            background-color: var(--success);
+            color: white;
+        }
+        
+        .voting-status.closed {
+            background-color: var(--danger);
+            color: white;
+        }
+        
+        .team-home {
+            background-color: black;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
@@ -323,16 +442,28 @@
         <p>U14's Parents Player of the Match</p>
     </header>
     
-    <nav>
-        <button class="nav-button active" data-page="match-setup">Match Setup</button>
+    <div class="login-section" id="login-section">
+        <h2>Welcome</h2>
+        <div class="role-status" id="role-status">Parent Access</div>
+        <div class="form-group">
+            <label for="password-input">Admin Password</label>
+            <input type="password" id="password-input" placeholder="Enter admin password">
+        </div>
+        <button class="btn btn-primary" id="login-btn">Login as Admin</button>
+        <button class="btn btn-secondary" id="parent-btn">Continue as Parent</button>
+    </div>
+    
+    <nav id="main-nav" style="display: none;">
+        <button class="nav-button admin-only" data-page="match-setup">Match Setup</button>
         <button class="nav-button" data-page="voting">Voting</button>
         <button class="nav-button" data-page="results">Results</button>
-        <button class="nav-button" data-page="players">Players</button>
+        <button class="nav-button admin-only" data-page="players">Players</button>
+        <button class="nav-button" id="logout-btn">Logout</button>
     </nav>
     
     <div class="container">
         <!-- Match Setup Page -->
-        <div class="page active" id="match-setup">
+        <div class="page admin-only" id="match-setup">
             <h2>Match Setup</h2>
             <form id="match-form">
                 <div class="form-group">
@@ -358,6 +489,13 @@
                         <!-- Will be populated dynamically -->
                     </select>
                 </div>
+                <div class="form-group">
+                    <label for="voting-enabled">Enable Voting</label>
+                    <select id="voting-enabled">
+                        <option value="true">Open</option>
+                        <option value="false">Closed</option>
+                    </select>
+                </div>
                 <button type="submit" class="btn btn-primary">Save Match Setup</button>
             </form>
             
@@ -376,6 +514,7 @@
         <!-- Voting Page -->
         <div class="page" id="voting">
             <h2>Vote for Player of the Match</h2>
+            <div id="voting-status" class="voting-status closed">Voting is currently closed</div>
             <div id="match-info-display" class="match-info">
                 <!-- Will be populated dynamically -->
             </div>
@@ -389,6 +528,83 @@
         <div class="page" id="results">
             <h2>Match Results</h2>
             <select id="results-match-select">
+                <option value="">Select a Match</option>
+                <!-- Will be populated dynamically -->
+            </select>
+            
+            <div id="match-results">
+                <!-- Will be populated dynamically -->
+            </div>
+        </div>
+        
+        <!-- Players Management Page -->
+        <div class="page admin-only" id="players">
+            <h2>Manage Players</h2>
+            <form id="add-player-form">
+                <div class="form-group">
+                    <label for="player-name">Player Name</label>
+                    <input type="text" id="player-name" placeholder="Enter player name" required>
+                </div>
+                <div class="form-group">
+                    <label for="player-number">Shirt Number</label>
+                    <input type="number" id="player-number" placeholder="Enter shirt number" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Add Player</button>
+            </form>
+            
+            <h3>Player List</h3>
+            <div id="player-list" class="player-list">
+                <!-- Will be populated dynamically -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Edit Player Modal -->
+    <div class="modal" id="edit-player-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Edit Player</h3>
+                <button class="close-btn">&times;</button>
+            </div>
+            <form id="edit-player-form">
+                <input type="hidden" id="edit-player-id">
+                <div class="form-group">
+                    <label for="edit-player-name">Player Name</label>
+                    <input type="text" id="edit-player-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-player-number">Shirt Number</label>
+                    <input type="number" id="edit-player-number" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Admin Password Modal -->
+    <div class="modal" id="admin-password-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Set Admin Password</h3>
+                <button class="close-btn" id="admin-modal-close">&times;</button>
+            </div>
+            <p>Please set an admin password to protect match and player management:</p>
+            <form id="admin-password-form">
+                <div class="form-group">
+                    <label for="new-password">Admin Password</label>
+                    <input type="password" id="new-password" required>
+                </div>
+                <div class="form-group">
+                    <label for="confirm-password">Confirm Password</label>
+                    <input type="password" id="confirm-password" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Set Password</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Toast Notification -->
+    <div class="toast" id="toast"></div>-select">
                 <option value="">Select a Match</option>
                 <!-- Will be populated dynamically -->
             </select>
