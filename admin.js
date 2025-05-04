@@ -13,9 +13,11 @@ async function loadPlayers() {
   officialMotmSelect.innerHTML = '';
   playersSnap.forEach(docSnap => {
     const li = document.createElement('li');
+    li.className = 'flex justify-between items-center p-2 border-b';
     li.textContent = docSnap.data().name;
     const del = document.createElement('button');
     del.textContent = 'Remove';
+    del.className = 'text-red-500 hover:text-red-700 ml-4 text-sm';
     del.onclick = async () => {
       await deleteDoc(doc(db, 'players', docSnap.id));
       loadPlayers();
